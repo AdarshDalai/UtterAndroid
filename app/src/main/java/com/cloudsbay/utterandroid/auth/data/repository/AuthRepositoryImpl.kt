@@ -18,6 +18,9 @@ class AuthRepositoryImpl @Inject constructor(
             accessToken = response.session.tokenData.accessToken,
             refreshToken = response.session.tokenData.refreshToken
         )
+        authService.saveCurrentUserId(
+            userId = response.session.user.id
+        )
         return response
     }
 

@@ -21,8 +21,8 @@ class NetworkModule {
 
     @Provides
     @Singleton
-    fun providesAuthService(ktorClient: KtorClient, tokenDataStore: TokenDataStore): AuthService {
-        return AuthService(ktorClient, tokenDataStore)
+    fun providesAuthService(@ApplicationContext context: Context, ktorClient: KtorClient, tokenDataStore: TokenDataStore): AuthService {
+        return AuthService(context, ktorClient, tokenDataStore)
     }
 
     @Provides
