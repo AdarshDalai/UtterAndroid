@@ -7,9 +7,16 @@ import com.cloudsbay.utterandroid.profile.domain.model.ProfileResponse
 import com.cloudsbay.utterandroid.profile.domain.model.UserFollowerResponse
 import com.cloudsbay.utterandroid.profile.domain.model.UserFollowingResponse
 import io.ktor.client.call.body
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
+import okhttp3.MultipartBody
+import java.io.File
 import javax.inject.Inject
 
 class ProfileService @Inject constructor(
@@ -20,11 +27,10 @@ class ProfileService @Inject constructor(
 
     suspend fun getUserProfile(userId: String): ProfileResponse {
         val response = client.get{
-            url("users/profile")
+            url("users/$userId")
             tokenDataStore.getAccessToken()?.let {
                 headers.append("Authorization", "Bearer $it")
             }
-            setBody(userId)
         }
         return response.body()
     }
@@ -67,5 +73,41 @@ class ProfileService @Inject constructor(
             }
         }
         return response.body()
+    }
+
+    suspend fun updateUsername(username: String) {
+        client.put {
+            url("users/update_username?=$username")
+            tokenDataStore.getAccessToken()?.let {
+                headers.append("Authorization", "Bearer $it")
+            }
+            parameter("username", username)
+        }
+    }
+
+    suspend fun updateBio(bio: String) {
+        client.put {
+            url("users/update_bio?=$bio")
+            tokenDataStore.getAccessToken()?.let {
+                headers.append("Authorization", "Bearer $it")
+            }
+            parameter("bio", bio)
+        }
+    }
+
+    suspend fun updateProfilePicture(profilePicture: File) {
+        client.put {
+            url("users/update_profile_picture")
+            tokenDataStore.getAccessToken()?.let {
+                headers.append("Authorization", "Bearer $it")
+            }
+            setBody(
+                MultiPartFormDataContent(
+                    formData {
+                        append("profile_picture", profilePicture.readBytes())
+                    }
+                )
+            )
+        }
     }
 }

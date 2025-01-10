@@ -1,8 +1,8 @@
 package com.cloudsbay.utterandroid.feed.data.repository
 
-import com.cloudsbay.utterandroid.feed.domain.FeedResponse
+import com.cloudsbay.utterandroid.post.domain.model.PostsResponse
 
 interface FeedRepository {
-    suspend fun getFeed(): FeedResponse
+    suspend fun getFeed(): List<PostsResponse.Post>
 
 }

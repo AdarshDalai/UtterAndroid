@@ -2,8 +2,8 @@ package com.cloudsbay.utterandroid.feed.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.cloudsbay.utterandroid.feed.domain.FeedResponse
 import com.cloudsbay.utterandroid.feed.domain.FeedUseCase
+import com.cloudsbay.utterandroid.post.domain.model.PostsResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +18,7 @@ class FeedScreenViewModel @Inject constructor(
     sealed class FeedState {
         data object Idle : FeedState()
         data object Loading : FeedState()
-        data class Success(val feed: FeedResponse) : FeedState()
+        data class Success(val feed: List<PostsResponse.Post>) : FeedState()
         data class Error(val message: String) : FeedState()
     }
 

@@ -17,6 +17,5 @@ class GetCurrentUserUseCase @Inject constructor(
         emit(user.getCurrentUser())
     }.catch {
         Log.e("GetCurrentUserUseCase", it.message.toString())
-
     }.flowOn(Dispatchers.IO)
 }

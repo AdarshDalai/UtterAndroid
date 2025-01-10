@@ -3,6 +3,8 @@ package com.cloudsbay.utterandroid.post.presentation
 import android.Manifest
 import android.content.Context
 import android.net.Uri
+import android.os.Environment
+import android.util.Log
 import android.widget.FrameLayout
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -346,10 +348,17 @@ fun CameraWithGallery(
 }
 
 fun getOutputDirectory(context: Context): File {
-    val mediaDir = context.externalMediaDirs.firstOrNull()?.let {
-        File(it, "Utter").apply { mkdirs() }
+    val mediaDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES) // Use getExternalFilesDir for app-specific storage
+        ?: return context.filesDir // Fallback to internal storage if external is unavailable
+
+    val utterDir = File(mediaDir, "Utter")
+    if (!utterDir.exists()) {
+        if (!utterDir.mkdirs()) {
+            // Handle directory creation failure (e.g., log an error)
+            Log.e("CreatePostScreen", "Failed to create directory: ${utterDir.absolutePath}")
+        }
     }
-    return if (mediaDir != null && mediaDir.exists()) mediaDir else context.filesDir
+    return utterDir
 }
 
 @Composable

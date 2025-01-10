@@ -27,8 +27,8 @@ class NetworkModule {
 
     @Provides
     @Singleton
-    fun providesKtorClient(@ApplicationContext context: Context): KtorClient {
-        return KtorClient(context)
+    fun providesKtorClient(tokenDataStore: TokenDataStore): KtorClient {
+        return KtorClient(tokenDataStore)
     }
 
     @Provides

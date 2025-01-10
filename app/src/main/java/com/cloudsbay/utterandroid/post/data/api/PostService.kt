@@ -24,7 +24,7 @@ class PostService @Inject constructor(
     private val ktorClient: KtorClient,
     private val tokenDataStore: TokenDataStore
 ) {
-    val client = ktorClient.getClientInstance()
+    private val client = ktorClient.getClientInstance()
 
     suspend fun uploadPost(content: String, mediaFile: File): PostsResponse.Post {
         val response = client.post {
@@ -32,13 +32,17 @@ class PostService @Inject constructor(
             tokenDataStore.getAccessToken()?.let {
                 headers.append("Authorization", "Bearer $it")
             }
-            formData {
-                append("content", content)
-                append("media", mediaFile.readBytes(), Headers.build {
-                    append(HttpHeaders.ContentType, getMimeType(mediaFile))
-                    append(HttpHeaders.ContentDisposition, "filename=${mediaFile.name}")
-                })
-            }
+            setBody(
+                MultiPartFormDataContent(
+                    formData {
+                        append("content", content)
+                        append("media", mediaFile.readBytes(), Headers.build {
+                            append(HttpHeaders.ContentType, getMimeType(mediaFile))
+                            append(HttpHeaders.ContentDisposition, "filename=${mediaFile.name}")
+                        })
+                    }
+                )
+            )
         }
         return response.body()
     }

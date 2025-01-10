@@ -60,7 +60,7 @@ class AuthService @Inject constructor(
     }
 
     suspend fun signup(request: SignupRequest): LoginResponse {
-        return client.post("auth/signup"){
+        return client.post("auth/signup") {
             contentType(ContentType.Application.Json)
             setBody(
                 SignupRequest(
@@ -96,11 +96,11 @@ class AuthService @Inject constructor(
 
     suspend fun getCurrentUser(): CurrentUserResponse {
         val accessToken = getAccessToken()
-        Log.d("AuthService","Bearer ${accessToken}")
+        Log.d("AuthService","Bearer $accessToken")
         return client.get{
             url("auth/current_user")
             headers {
-                append(HttpHeaders.Authorization, "Bearer ${accessToken}")
+                append(HttpHeaders.Authorization, "Bearer $accessToken")
             }
             contentType(ContentType.Application.Json)
         }.body()

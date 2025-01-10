@@ -7,7 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.cloudsbay.utterandroid.auth.presentation.AuthScreen
+import androidx.navigation.compose.rememberNavController
+import com.cloudsbay.utterandroid.navigation.AppNavGraph
 import com.cloudsbay.utterandroid.ui.theme.UtterAndroidTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -22,7 +23,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    AuthScreen()
+                    val navController = rememberNavController()
+                    AppNavGraph(navController)
                 }
             }
         }

@@ -40,7 +40,18 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getCurrentUser(): CurrentUserResponse {
-        return authService.getCurrentUser()
+        val response = authService.getCurrentUser()
+        authService.saveCurrentUserId(response.user.sub)
+        return response
     }
 
+    override suspend fun saveCurrentUserId(userId: String) {
+        val response = authService.saveCurrentUserId(userId)
+        return response
+    }
+
+    override suspend fun getCurrentUserId(): String {
+        val response = authService.getCurrentUserId()
+        return response!!
+    }
 }

@@ -5,10 +5,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class SignupRequest(
-    val email: String,
-    val password: String,
-    val username: String,
-    val name: String,
-    val bio: String,
+    @SerialName("email")val email: String,
+    @SerialName("password")val password: String,
+    @SerialName("username")val username: String,
+    @SerialName("name")val name: String,
+    @SerialName("bio")val bio: String,
     @SerialName("profile_picture_url") val profilePictureUrl: String? = null
 )
