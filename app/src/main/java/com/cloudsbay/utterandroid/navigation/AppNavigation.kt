@@ -1,14 +1,27 @@
 package com.cloudsbay.utterandroid.navigation
 
+import android.graphics.drawable.Icon
+import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -17,30 +30,27 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.cloudsbay.utterandroid.auth.presentation.AuthTabScreen
 import com.cloudsbay.utterandroid.auth.presentation.AuthViewModel
 import com.cloudsbay.utterandroid.feed.presentation.FeedScreen
+import com.cloudsbay.utterandroid.post.presentation.AddPostScreen
+import com.cloudsbay.utterandroid.post.presentation.UploadPostScreen
 import com.cloudsbay.utterandroid.profile.presentation.ProfileScreen
-import com.cloudsbay.utterandroid.profile.presentation.ProfileScreenViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @Composable
-fun AppNavGraph(navController: NavHostController = rememberNavController()) {
-    val profileViewModel: ProfileScreenViewModel = hiltViewModel()
+fun AppNavGraph(navController: NavHostController) {
     val authViewModel: AuthViewModel = hiltViewModel()
     val currentUserState = authViewModel.authState.collectAsState()
     val currentUserId = when (val state = currentUserState.value) {
         is AuthViewModel.AuthState.Success -> state.user.user.sub
         else -> null
     }
-    Log.d("AppNavGraph", "1. currentUserId: $currentUserId")
-    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
     LaunchedEffect(currentUserId) {
-        Log.d("AppNavGraph", "2. currentUserId: $currentUserId")
         if (currentUserId != null) {
             navController.navigate(AppNavigation.Feed.route) {
                 popUpTo(AppNavigation.Auth.route) { inclusive = true }
@@ -54,8 +64,8 @@ fun AppNavGraph(navController: NavHostController = rememberNavController()) {
 
     Scaffold(
         bottomBar = {
-            if (currentRoute != AppNavigation.Auth.route) {
-                BottomNavigationBar(navController)
+            if (navController.currentBackStackEntryAsState().value?.destination?.route != AppNavigation.Auth.route) {
+                BottomBar(navController)
             }
         }
     ) { innerPadding ->
@@ -76,59 +86,21 @@ fun AppNavGraph(navController: NavHostController = rememberNavController()) {
                     ProfileScreen(userId = userId, navController = navController)
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun BottomNavigationBar(navController: NavHostController, authViewModel: AuthViewModel= hiltViewModel()) {
-    val items = listOf(BottomNavigation.Home, BottomNavigation.Profile)
-    val navBackStackEntry = navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry.value?.destination?.route
-
-    // Observe the authState to get the current user
-    val currentUserState = authViewModel.authState.collectAsState()
-
-    NavigationBar {
-        items.forEach { item ->
-            NavigationBarItem(
-                icon = { Icon(imageVector = item.icon, contentDescription = null) },
-                label = { Text(item.label) },
-                selected = currentRoute?.startsWith(item.route) == true,
-                onClick = {
-                    when (item) {
-                        is BottomNavigation.Home -> {
-                            navController.navigate(AppNavigation.Feed.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                        is BottomNavigation.Profile -> {
-                            // Launch a coroutine to fetch the current user
-                            navController.currentBackStackEntry?.let { backStackEntry ->
-                                CoroutineScope(Dispatchers.Main).launch {
-                                    authViewModel.fetchCurrentUser()
-
-                                    // Observe the result and navigate with the currentUserId
-                                    val currentUserId = (currentUserState.value as? AuthViewModel.AuthState.Success)?.user?.user?.sub
-                                    currentUserId?.let {
-                                        navController.navigate("${AppNavigation.Profile.route}/$it") {
-                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                saveState = true
-                                            }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    }
-                                }
-                            }
-                        }
+            composable(AppNavigation.CreatePost.route) {
+                AddPostScreen(
+                    navController = navController,
+                    onPostSelected = { uri ->
+                        navController.navigate("${AppNavigation.UploadPost.route}?uri=$uri")
                     }
-                }
-            )
+                )
+            }
+            composable("${AppNavigation.UploadPost.route}?uri={uri}") { backStackEntry ->
+                val mediaUri = backStackEntry.arguments?.getString("uri")
+                UploadPostScreen(
+                    mediaUri = Uri.parse(mediaUri),
+                    navController = navController
+                )
+            }
         }
     }
 }
@@ -137,14 +109,19 @@ sealed class AppNavigation(val route: String, val label: String) {
     object Auth : AppNavigation("auth", "Auth")
     object Feed : AppNavigation("feed", "Feed")
     object Profile : AppNavigation("profile", "Profile")
+    object CreatePost : AppNavigation("createPost", "Create")
+    object UploadPost: AppNavigation("uploadPost", "Upload")
 }
 
 sealed class BottomNavigation(
     val title: String,
     val route: String,
     val label: String,
-    val icon: ImageVector
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector,
+    val badgeCount: Int? = null
 ) {
-    object Home : BottomNavigation("Home", AppNavigation.Feed.route, AppNavigation.Feed.label, Icons.Default.Home)
-    object Profile : BottomNavigation("Profile", AppNavigation.Profile.route, AppNavigation.Profile.label, Icons.Default.Person)
+    object Home : BottomNavigation("Home", AppNavigation.Feed.route, AppNavigation.Feed.label, Icons.Default.Home, Icons.Outlined.Home)
+    object Profile : BottomNavigation("Profile", AppNavigation.Profile.route, AppNavigation.Profile.label, Icons.Default.Person, Icons.Outlined.Person)
+    object CreatePost: BottomNavigation("CreatePost", AppNavigation.CreatePost.route, AppNavigation.CreatePost.label, Icons.Default.AddCircle, Icons.Default.AddCircleOutline)
 }

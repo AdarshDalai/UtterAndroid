@@ -1,5 +1,6 @@
 package com.cloudsbay.utterandroid.di
 
+import android.content.ContentResolver
 import android.content.Context
 import com.cloudsbay.utterandroid.auth.data.api.TokenDataStore
 import com.cloudsbay.utterandroid.comment.data.CommentService
@@ -8,7 +9,7 @@ import com.cloudsbay.utterandroid.comment.data.repository.CommentRepositoryImpl
 import com.cloudsbay.utterandroid.feed.data.FeedService
 import com.cloudsbay.utterandroid.feed.data.repository.FeedRepository
 import com.cloudsbay.utterandroid.feed.data.repository.FeedRepositoryImpl
-import com.cloudsbay.utterandroid.like.data.LikeService
+import com.cloudsbay.utterandroid.like.data.api.LikeService
 import com.cloudsbay.utterandroid.like.data.repository.LikeRepository
 import com.cloudsbay.utterandroid.like.data.repository.LikeRepositoryImpl
 import com.cloudsbay.utterandroid.network.KtorClient
@@ -16,6 +17,7 @@ import com.cloudsbay.utterandroid.post.data.api.PostDataStore
 import com.cloudsbay.utterandroid.post.data.api.PostService
 import com.cloudsbay.utterandroid.post.data.repository.PostRepository
 import com.cloudsbay.utterandroid.post.data.repository.PostRepositoryImpl
+import com.cloudsbay.utterandroid.post.data.FileReader
 import com.cloudsbay.utterandroid.profile.data.api.ProfileDataStore
 import com.cloudsbay.utterandroid.profile.data.api.ProfileService
 import com.cloudsbay.utterandroid.profile.data.repository.ProfileRepository
@@ -32,8 +34,8 @@ import javax.inject.Singleton
 class AppModule {
     @Provides
     @Singleton
-    fun providesPostsService(ktorClient: KtorClient, tokenDataStore: TokenDataStore): PostService {
-        return PostService(ktorClient, tokenDataStore)
+    fun providesPostsService(ktorClient: KtorClient, tokenDataStore: TokenDataStore, fileReader: FileReader): PostService {
+        return PostService(ktorClient, tokenDataStore, fileReader)
     }
 
     @Provides
@@ -41,6 +43,11 @@ class AppModule {
     fun providesPostDataStore(@ApplicationContext context: Context): PostDataStore {
         return PostDataStore(context)
 
+    }
+
+    @Provides
+    fun provideContentResolver(@ApplicationContext context: Context): ContentResolver {
+        return context.contentResolver
     }
 
     @Provides
@@ -102,5 +109,11 @@ class AppModule {
     @Singleton
     fun providesFeedRepository(feedService: FeedService): FeedRepository {
         return FeedRepositoryImpl(feedService)
+    }
+
+    @Provides
+    @Singleton
+    fun providesFileReader(@ApplicationContext context: Context): FileReader {
+        return FileReader(context)
     }
 }

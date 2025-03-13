@@ -1,10 +1,11 @@
-package com.cloudsbay.utterandroid.like.data
+package com.cloudsbay.utterandroid.like.data.api
 
 import com.cloudsbay.utterandroid.auth.data.api.TokenDataStore
-import com.cloudsbay.utterandroid.like.domain.LikeRequest
-import com.cloudsbay.utterandroid.like.domain.LikeResponse
+import com.cloudsbay.utterandroid.like.domain.model.LikeRequest
+import com.cloudsbay.utterandroid.like.domain.model.LikeResponse
 import com.cloudsbay.utterandroid.network.KtorClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.parameter
@@ -20,7 +21,7 @@ class LikeService @Inject constructor(
     val client = ktorClient.getClientInstance()
     suspend fun insertLike(postId: Int): LikeResponse {
         return client.post {
-            url("likes/insert_like")
+            url("likes/like_post")
             tokenDataStore.getAccessToken()?.let {
                 headers {
                     append("Authorization", "Bearer $it")
@@ -30,7 +31,18 @@ class LikeService @Inject constructor(
         }.body()
     }
 
-    suspend fun getLike(postId: Int): LikeResponse {
+    suspend fun unlikePost(postId: Int): String {
+        return client.delete {
+            url("likes/unlike_post")
+            tokenDataStore.getAccessToken()?.let {
+                headers {
+                    append("Authorization", "Bearer $it")
+                }
+            }
+        }.body()
+    }
+
+    suspend fun getLike(postId: Int): List<LikeResponse> {
         return client.get {
             url("likes/$postId")
             tokenDataStore.getAccessToken()?.let {

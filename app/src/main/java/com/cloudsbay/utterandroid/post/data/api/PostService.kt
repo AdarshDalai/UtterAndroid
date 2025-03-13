@@ -1,59 +1,55 @@
 package com.cloudsbay.utterandroid.post.data.api
 
+import android.net.Uri
+import android.util.Log
 import com.cloudsbay.utterandroid.auth.data.api.TokenDataStore
 import com.cloudsbay.utterandroid.network.KtorClient
+import com.cloudsbay.utterandroid.post.data.FileReader
 import com.cloudsbay.utterandroid.post.domain.model.PostsResponse
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
-import io.ktor.client.request.forms.submitFormWithBinaryData
-import io.ktor.client.request.parameter
+import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.client.request.url
-import io.ktor.http.ContentType
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
-import io.ktor.http.content.PartData
-import io.ktor.http.content.streamProvider
-import io.ktor.http.parameters
-import java.io.File
 import javax.inject.Inject
 
 class PostService @Inject constructor(
     private val ktorClient: KtorClient,
-    private val tokenDataStore: TokenDataStore
+    private val tokenDataStore: TokenDataStore,
+    private val fileReader: FileReader
 ) {
     private val client = ktorClient.getClientInstance()
 
-    suspend fun uploadPost(content: String, mediaFile: File): PostsResponse.Post {
-        val response = client.post {
-            url("posts/post")
-            tokenDataStore.getAccessToken()?.let {
-                headers.append("Authorization", "Bearer $it")
-            }
+    suspend fun uploadPost(caption: String, mediaFile: Uri): PostsResponse.Post {
+        val info = fileReader.uriToFileInfo(mediaFile)
+        val accessToken = tokenDataStore.getAccessToken() ?: throw IllegalStateException("Access token is missing")
+
+        val response: HttpResponse = client.post("posts/post") {
             setBody(
                 MultiPartFormDataContent(
                     formData {
-                        append("content", content)
-                        append("media", mediaFile.readBytes(), Headers.build {
-                            append(HttpHeaders.ContentType, getMimeType(mediaFile))
-                            append(HttpHeaders.ContentDisposition, "filename=${mediaFile.name}")
+                        append("caption", caption)
+                        append("media", info.bytes, Headers.build {
+                            append(HttpHeaders.ContentType, "image/jpeg")
+                            Log.d("PostService", "uploadPost: ${info.mimeType}")
                         })
                     }
                 )
             )
+            headers {
+                append("Authorization", "Bearer $accessToken")
+                append("Accept", "application/json")
+            }
         }
-        return response.body()
-    }
 
-    private fun getMimeType(file: File): String {
-        return when (file.extension.lowercase()) {
-            "jpg", "jpeg" -> "image/jpeg"
-            "png" -> "image/png"
-            "mp4" -> "video/mp4"
-            "mov" -> "video/quicktime"
-            else -> "application/octet-stream"
+        if (response.status.value in 200..299) {
+            return response.body()
+        } else {
+            throw IllegalStateException("Failed to upload post: ${response.status}")
         }
     }
 }

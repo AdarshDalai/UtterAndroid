@@ -1,4 +1,4 @@
-package com.cloudsbay.utterandroid.like.domain
+package com.cloudsbay.utterandroid.like.domain.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

@@ -1,12 +1,14 @@
 package com.cloudsbay.utterandroid.post.presentation
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.cloudsbay.utterandroid.post.domain.model.PostsResponse
 import com.cloudsbay.utterandroid.post.domain.usecase.UploadPostUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
@@ -14,27 +16,46 @@ import javax.inject.Inject
 @HiltViewModel
 class UploadPostViewModel @Inject constructor(
     private val uploadPostUseCase: UploadPostUseCase
-): ViewModel() {
-    sealed class UploadPostState {
-        data object Idle : UploadPostState()
-        data object Loading : UploadPostState()
-        data class Success(val post: PostsResponse.Post) : UploadPostState()
-        data class Error(val message: String) : UploadPostState()
+) : ViewModel() {
+
+    private val _isUploading = MutableStateFlow(false)
+    val isUploading: StateFlow<Boolean> = _isUploading
+
+    private val _uploadProgress = MutableStateFlow(0f)
+    val uploadProgress: StateFlow<Float> = _uploadProgress
+
+    private val _caption = MutableStateFlow("")
+    val caption: StateFlow<String> = _caption
+
+    private val _uploadMessage = MutableStateFlow<String?>(null)
+    val uploadMessage: StateFlow<String?> = _uploadMessage
+
+    fun updateCaption(newCaption: String) {
+        _caption.value = newCaption
     }
 
-    private val _uploadPostState = MutableStateFlow<UploadPostState>(UploadPostState.Idle)
-    val uploadPostState: StateFlow<UploadPostState> = _uploadPostState
+    fun uploadPost(mediaUri: Uri?, caption: String, context: Context) {
+        if (mediaUri == null) {
+            _uploadMessage.value = "Media file is required"
+            return
+        }
 
-    fun uploadPost(content: String, mediaFile: File) {
-        _uploadPostState.value = UploadPostState.Loading
         viewModelScope.launch {
-            runCatching {
-                uploadPostUseCase(content, mediaFile).collect { post ->
-                    _uploadPostState.value = UploadPostState.Success(post)
+            _isUploading.value = true
+            _uploadMessage.value = null
+
+            try {
+                val response = uploadPostUseCase(caption, mediaUri)  // Pass caption and file
+                response.collect { post ->
+                    _isUploading.value = false
+                    _uploadMessage.value = "Upload successful! Post ID: ${post.id}"
                 }
-            }.onFailure {
-                _uploadPostState.value = UploadPostState.Error(it.message ?: "An unexpected error occurred")
+            } catch (e: Exception) {
+                _isUploading.value = false
+                _uploadMessage.value = "Upload failed: ${e.message}"
             }
         }
     }
+
+
 }

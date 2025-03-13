@@ -14,6 +14,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.cloudsbay.utterandroid.auth.presentation.ErrorScreen
 import com.cloudsbay.utterandroid.auth.presentation.LoadingScreen
+import com.cloudsbay.utterandroid.common.presentation.PostCard
 import com.cloudsbay.utterandroid.post.domain.model.PostsResponse
 
 @Composable
@@ -50,7 +51,7 @@ fun FeedScreen(navController: NavController, viewModel: FeedScreenViewModel = hi
 fun FeedContent(feed: List<PostsResponse.Post>, navController: NavController) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(feed) { post ->
-            PostComposable(
+            PostCard(
                 postId = post.id,
                 userId = post.userId,
                 content = post.content,

@@ -1,28 +1,19 @@
 package com.cloudsbay.utterandroid.post.presentation
 
+import android.content.ContentResolver
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.camera.core.CameraSelector
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import java.io.File
-import android.content.ContentResolver
+import javax.inject.Inject
 
 
-class CreatePostViewModel(private val contentResolver: ContentResolver) : ViewModel() {
-    sealed class CreatePostState {
-        data object Idle : CreatePostState()
-        data class MediaSelected(val mediaFile: File) : CreatePostState()
-        data class Edited(val editedMediaFile: File) : CreatePostState()
-        data class Error(val message: String) : CreatePostState()
-    }
-
-    private val _createPostState = MutableStateFlow<CreatePostState>(CreatePostState.Idle)
-    val createPostState: StateFlow<CreatePostState> = _createPostState
+@HiltViewModel
+class AddPostViewModel @Inject constructor(private val contentResolver: ContentResolver) : ViewModel() {
 
     private val _cameraSelector = MutableStateFlow(CameraSelector.DEFAULT_BACK_CAMERA)
     val cameraSelector: StateFlow<CameraSelector> = _cameraSelector
@@ -89,24 +80,5 @@ class CreatePostViewModel(private val contentResolver: ContentResolver) : ViewMo
         }
 
         _galleryImages.value = images
-    }
-    fun selectMediaFromCamera(capturedFile: File) {
-        _createPostState.value = CreatePostState.MediaSelected(capturedFile)
-    }
-
-    fun selectMediaFromGallery(selectedFile: File) {
-        _createPostState.value = CreatePostState.MediaSelected(selectedFile)
-    }
-
-    fun editMedia(editedFile: File) {
-        _createPostState.value = CreatePostState.Edited(editedFile)
-    }
-
-    fun resetState() {
-        _createPostState.value = CreatePostState.Idle
-    }
-
-    fun handleError(message: String) {
-        _createPostState.value = CreatePostState.Error(message)
     }
 }
